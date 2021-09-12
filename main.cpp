@@ -4,6 +4,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <vector>
+#include "Shape.h"
 
 GLboolean printShaderInfoLog(GLuint shader, const char* str) {
 	GLint status;
@@ -107,6 +108,14 @@ GLuint loadProgram(const char* vert, const char* frag) {
 	return v_stat && f_stat ? createProgram(v_src.data(), f_src.data()) : 0;
 }
 
+
+constexpr Object::Vertex rectangleVertex[] = {
+		{-0.5f, -0.5f},
+		{0.5f, -0.5f},
+		{0.5f, 0.5f},
+		{-0.5f, 0.5f}
+};
+
 int main() {
 	if(glfwInit() == GL_FALSE) {
 		std::cerr << "Couldn't Initialize GLFW." << std::endl;
@@ -140,12 +149,15 @@ int main() {
 
 	auto program(loadProgram("point.vert", "point.frag"));
 
+	std::unique_ptr<const Shape> shape(new Shape(2,4,rectangleVertex));
+
 	while (glfwWindowShouldClose(w) == GL_FALSE) {
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glUseProgram(program);
 
 		// draw
+		shape->draw();
 
 		glfwSwapBuffers(w);
 		glfwWaitEvents();
