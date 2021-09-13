@@ -5,6 +5,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "Window.h"
+#include "Matrix.h"
 #include "Shape.h"
 
 GLboolean printShaderInfoLog(GLuint shader, const char* str) {
@@ -136,9 +137,8 @@ int main() {
 
 	auto program(loadProgram("resources/point.vert", "resources/point.frag"));
 
-	const auto sizeLoc(glGetUniformLocation(program, "size"));
-	const auto scaleLoc(glGetUniformLocation(program, "scale"));
-	const auto locationLoc(glGetUniformLocation(program, "location"));
+	const auto modelViewLoc(glGetUniformLocation(program, "modelView"));
+	const auto projectionLoc(glGetUniformLocation(program, "projection"));
 
 	std::unique_ptr<const Shape> shape(new Shape(2, 4, rectangleVertex));
 
@@ -147,11 +147,32 @@ int main() {
 
 		glUseProgram(program);
 
-		// set aspect ratio
-//		glUniform1f(aspectLoc, window.getAspect());
-		glUniform2fv(sizeLoc, 1, window.getSize());
-		glUniform1f(scaleLoc, window.getScale());
-		glUniform2fv(locationLoc, 1, window.getLocation());
+		// OrthoProjectionMatrixを求める
+		const GLfloat* const size(window.getSize());
+		const GLfloat scale(window.getScale() * 2.0f);
+		const GLfloat w(size[0] / scale), h(size[1] / scale);
+		const Matrix projection(Matrix::orthogonal(-w, w, -w, h, 1.0f, 10.0f));
+
+		// ModelProjectionMatrixを求める
+		const GLfloat* const location(window.getLocation());
+		const Matrix model(Matrix::translate(location[0], location[1], 0.0f));
+
+//		const Matrix scaling(Matrix::scale(scale / size[0], scale / size[1], 1.0f));
+
+		// 平行移動
+//		const GLfloat* const position(window.getLocation());
+//		const Matrix translation(Matrix::translate(position[0], position[1], 0.0f));
+
+		// 変換行列
+//		const Matrix model(translation * scaling);
+//		const Matrix view(Matrix::lookAt(0.0f, 0.0f, 0.0f, -1.0f, -1.0f, -1.0f, 0.0f, 1.0f, 0.0f));
+		const Matrix view(Matrix::lookAt(3.0f, 4.0f, 5.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f));
+		const Matrix modelView(view * model);
+
+		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, projection.data());
+		glUniformMatrix4fv(modelViewLoc, 1, GL_FALSE, modelView.data());
+
+
 
 		// draw
 		shape->draw();
