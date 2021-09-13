@@ -1,9 +1,10 @@
 #include <iostream>
 #include <cstdlib>
 #include <fstream>
+#include <vector>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <vector>
+#include "Window.h"
 #include "Shape.h"
 
 GLboolean printShaderInfoLog(GLuint shader, const char* str) {
@@ -111,8 +112,8 @@ GLuint loadProgram(const char* vert, const char* frag) {
 
 constexpr Object::Vertex rectangleVertex[] = {
 		{-0.5f, -0.5f},
-		{0.5f, -0.5f},
-		{0.5f, 0.5f},
+		{0.5f,  -0.5f},
+		{0.5f,  0.5f},
 		{-0.5f, 0.5f}
 };
 
@@ -129,37 +130,32 @@ int main() {
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* const w(glfwCreateWindow(640, 480, "Hello!", nullptr, nullptr));
-	if(w == nullptr) {
-		std::cerr << "Couldn't Create GLFW Window." << std::endl;
-		return 1;
-	}
-
-	glfwMakeContextCurrent(w);
-
-	glewExperimental = GL_TRUE;
-	if(glewInit() != GLEW_OK) {
-		std::cerr << "Couldn't Initialize GLEW." << std::endl;
-		return 1;
-	}
-
-	glfwSwapInterval(1); // wait for vsync
+	Window window;
 
 	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 
-	auto program(loadProgram("point.vert", "point.frag"));
+	auto program(loadProgram("resources/point.vert", "resources/point.frag"));
 
-	std::unique_ptr<const Shape> shape(new Shape(2,4,rectangleVertex));
+	const auto sizeLoc(glGetUniformLocation(program, "size"));
+	const auto scaleLoc(glGetUniformLocation(program, "scale"));
+	const auto locationLoc(glGetUniformLocation(program, "location"));
 
-	while (glfwWindowShouldClose(w) == GL_FALSE) {
+	std::unique_ptr<const Shape> shape(new Shape(2, 4, rectangleVertex));
+
+	while (window) {
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glUseProgram(program);
 
+		// set aspect ratio
+//		glUniform1f(aspectLoc, window.getAspect());
+		glUniform2fv(sizeLoc, 1, window.getSize());
+		glUniform1f(scaleLoc, window.getScale());
+		glUniform2fv(locationLoc, 1, window.getLocation());
+
 		// draw
 		shape->draw();
 
-		glfwSwapBuffers(w);
-		glfwWaitEvents();
+		window.swapBuffers();
 	}
 }
